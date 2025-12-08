@@ -102,7 +102,10 @@ export function listsClient<TEntity = string | number>() {
             const response = await $fetch<PaginatedListsResponse<TEntity>>(
               '/lists' + (params.toString() ? `?${params}` : '')
             );
-            return response.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!;
           },
 
           /**
@@ -112,7 +115,10 @@ export function listsClient<TEntity = string | number>() {
             const response = await $fetch<{ data: ListWithItems<TEntity> }>(
               `/lists/${listId}`
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -123,7 +129,10 @@ export function listsClient<TEntity = string | number>() {
               method: 'POST',
               body: input,
             });
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -134,7 +143,10 @@ export function listsClient<TEntity = string | number>() {
               method: 'PATCH',
               body: input,
             });
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -144,7 +156,10 @@ export function listsClient<TEntity = string | number>() {
             const response = await $fetch<{ success: boolean }>(`/lists/${listId}`, {
               method: 'DELETE',
             });
-            return response.data.success;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.success;
           },
 
           /**
@@ -165,7 +180,10 @@ export function listsClient<TEntity = string | number>() {
               method: 'POST',
               body: { entityId },
             });
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
         },
 
@@ -184,7 +202,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -210,7 +231,10 @@ export function listsClient<TEntity = string | number>() {
               data: ListItem<TEntity>[];
               meta: { total: number; page?: number; limit: number; hasMore: boolean };
             }>(`/lists/${listId}/items` + (params.toString() ? `?${params}` : ''));
-            return response.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!;
           },
 
           /**
@@ -228,7 +252,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -241,7 +268,10 @@ export function listsClient<TEntity = string | number>() {
                 method: 'DELETE',
               }
             );
-            return response.data.success;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.success;
           },
 
           /**
@@ -256,19 +286,25 @@ export function listsClient<TEntity = string | number>() {
             const listResponse = await $fetch<{ data: ListWithItems<TEntity> }>(
               `/lists/${listId}`
             );
-            const list = listResponse.data.data;
+            if (listResponse.error) {
+              throw listResponse.error;
+            }
+            const list = listResponse.data!.data;
             const existingItem = list.items.find(
               (item: ListItem<TEntity>) => item.entityId === entityId
             );
 
             if (existingItem) {
               // Remove item
-              await $fetch<{ success: boolean }>(
+              const removeResponse = await $fetch<{ success: boolean }>(
                 `/lists/${listId}/items/${existingItem.id}`,
                 {
                   method: 'DELETE',
                 }
               );
+              if (removeResponse.error) {
+                throw removeResponse.error;
+              }
               return { added: false };
             } else {
               // Add item
@@ -279,7 +315,10 @@ export function listsClient<TEntity = string | number>() {
                   body: { entityId, notes },
                 }
               );
-              return { added: true, item: response.data.data };
+              if (response.error) {
+                throw response.error;
+              }
+              return { added: true, item: response.data!.data };
             }
           },
         },
@@ -299,7 +338,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -316,7 +358,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -332,7 +377,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -346,7 +394,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input || {},
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -365,7 +416,10 @@ export function listsClient<TEntity = string | number>() {
               method: 'POST',
               body: { data },
             });
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -375,7 +429,10 @@ export function listsClient<TEntity = string | number>() {
             const response = await $fetch<{ data: ListExportFormat<TEntity> }>(
               `/lists/${listId}/export`
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
         },
 
@@ -391,7 +448,10 @@ export function listsClient<TEntity = string | number>() {
                 body: input,
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -401,7 +461,10 @@ export function listsClient<TEntity = string | number>() {
             const response = await $fetch<{ data: ListInvite[] }>(
               `/lists/${listId}/invites`
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -415,7 +478,10 @@ export function listsClient<TEntity = string | number>() {
                 body: { token },
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -429,7 +495,10 @@ export function listsClient<TEntity = string | number>() {
                 body: { token },
               }
             );
-            return response.data.success;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.success;
           },
 
           /**
@@ -453,7 +522,10 @@ export function listsClient<TEntity = string | number>() {
                 }>;
               }
             }>(`/lists/${listId}/members`);
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -471,7 +543,10 @@ export function listsClient<TEntity = string | number>() {
                 body: { permission },
               }
             );
-            return response.data.data;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.data;
           },
 
           /**
@@ -484,7 +559,10 @@ export function listsClient<TEntity = string | number>() {
                 method: 'DELETE',
               }
             );
-            return response.data.success;
+            if (response.error) {
+              throw response.error;
+            }
+            return response.data!.success;
           },
         },
       };

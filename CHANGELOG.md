@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all 26 client methods to properly unwrap the double-nested responses
   - Client now returns clean data structures without extra nesting
   - Example: `getUserLists()` now returns `{ data: [], meta: {} }` instead of `{ data: { data: [], meta: {} } }`
+- **Error Handling:** Added proper error checking for all client methods
+  - All methods now check `response.error` before accessing `response.data`
+  - Throws error if present, preventing `null` access on `response.data`
+  - Uses non-null assertion (`response.data!`) after error check for type safety
 
 ### Changed
 - Updated `BetterAuthFetch` type to accurately reflect Better-Auth's response wrapping behavior
