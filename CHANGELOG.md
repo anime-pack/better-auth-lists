@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-12-08
+
+### Fixed
+- **Response Structure:** Fixed confusing double-nested data responses in client plugin
+  - Better-fetch automatically wraps responses in `{ data, error }` structure
+  - Server endpoints were also wrapping in `{ data }`, causing `{ data: { data: actual } }` 
+  - Updated all 26 client methods to properly unwrap the double-nested responses
+  - Client now returns clean data structures without extra nesting
+  - Example: `getUserLists()` now returns `{ data: [], meta: {} }` instead of `{ data: { data: [], meta: {} } }`
+
+### Changed
+- Updated `BetterAuthFetch` type to accurately reflect Better-Auth's response wrapping behavior
+- Improved type inference for all client plugin methods
+
 ## [0.1.1] - 2025-12-08
 
 ### Fixed
