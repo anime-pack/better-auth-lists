@@ -60,7 +60,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
-        const { email, permission } = ctx.body;
+        const { email, permission, message } = ctx.body;
 
         // Get list
         const list = await ctx.context.adapter.findOne<List>({
@@ -139,6 +139,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
             permission,
             token,
             status: 'pending',
+            message,
             expiresAt,
             createdAt: new Date(),
           } as any,

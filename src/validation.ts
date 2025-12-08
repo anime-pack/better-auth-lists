@@ -58,6 +58,7 @@ export const updateItemSchema = z.object({
 export const shareListSchema = z.object({
   email: z.string().email('Invalid email address'),
   permission: sharePermissionSchema.default('view'),
+  message: z.string().max(500, 'Message cannot exceed 500 characters').optional(),
 });
 
 /**

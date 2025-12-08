@@ -64,6 +64,7 @@ export interface ListInvite {
   permission: SharePermission;
   token: string;
   status: InviteStatus;
+  message?: string;
   expiresAt: Date;
   createdAt: Date;
 }
@@ -130,6 +131,7 @@ export interface UpdateListItemInput {
 export interface ShareListInput {
   email: string;
   permission: SharePermission;
+  message?: string;
 }
 
 /**

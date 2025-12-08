@@ -171,6 +171,10 @@ export const createListsSchema = <TEntity = string | number>(
             required: true,
             defaultValue: 'pending',
           },
+          message: {
+            type: 'string' as const,
+            required: false,
+          },
           expiresAt: {
             type: 'date' as const,
             required: true,
