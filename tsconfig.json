@@ -5,15 +5,16 @@
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
+    // "jsx": "react-jsx",
     "allowJs": true,
 
     // Output configuration
     "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "composite": true,
+    // "composite": true,
 
     // Bundler mode
     "moduleResolution": "bundler",
