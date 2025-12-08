@@ -51,12 +51,15 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
         const { email, permission } = ctx.body;
 
         // Get list
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -69,7 +72,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Check share limit
-        const existingShares = await ctx.context.internalAdapter.findMany<ListShare>({
+        const existingShares = await ctx.context.adapter.findMany<ListShare>({
           model: 'listShares',
           where: [{ field: 'listId', value: listId }],
         });
@@ -79,7 +82,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Check if user is trying to invite themselves
-        const userByEmail = await ctx.context.internalAdapter.findOne({
+        const userByEmail = await ctx.context.adapter.findOne<{ id: string; email: string }>({
           model: 'user',
           where: [{ field: 'email', value: email }],
         });
@@ -90,7 +93,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
 
         // Check if already shared with this user
         if (userByEmail) {
-          const existingShare = await ctx.context.internalAdapter.findOne({
+          const existingShare = await ctx.context.adapter.findOne({
             model: 'listShares',
             where: [
               { field: 'listId', value: listId },
@@ -104,7 +107,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Check if there's already a pending invite
-        const existingInvite = await ctx.context.internalAdapter.findOne<ListInvite>({
+        const existingInvite = await ctx.context.adapter.findOne<ListInvite>({
           model: 'listInvites',
           where: [
             { field: 'listId', value: listId },
@@ -123,10 +126,9 @@ export const createSharingEndpoints = <TEntity = string | number>(
         expiresAt.setHours(expiresAt.getHours() + inviteExpirationHours);
 
         // Create invite
-        const invite = await ctx.context.internalAdapter.create<ListInvite>({
+        const invite = await ctx.context.adapter.create<ListInvite>({
           model: 'listInvites',
           data: {
-            id: crypto.randomUUID(),
             listId,
             inviterUserId: userId,
             inviteeEmail: email,
@@ -135,7 +137,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
             status: 'pending',
             expiresAt,
             createdAt: new Date(),
-          },
+          } as any,
         });
 
         // TODO: Send email notification via Better-Auth notification hooks
@@ -160,11 +162,14 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
 
         // Verify list ownership
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -177,7 +182,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Get invites
-        const invites = await ctx.context.internalAdapter.findMany<ListInvite>({
+        const invites = await ctx.context.adapter.findMany<ListInvite>({
           model: 'listInvites',
           where: [{ field: 'listId', value: listId }],
           sortBy: { field: 'createdAt', direction: 'desc' },
@@ -204,11 +209,14 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const { token } = ctx.body;
 
         // Get invite
-        const invite = await ctx.context.internalAdapter.findOne<ListInvite>({
+        const invite = await ctx.context.adapter.findOne<ListInvite>({
           model: 'listInvites',
           where: [{ field: 'token', value: token }],
         });
@@ -220,10 +228,10 @@ export const createSharingEndpoints = <TEntity = string | number>(
         // Check if expired
         if (new Date() > invite.expiresAt) {
           // Update status
-          await ctx.context.internalAdapter.update({
+          await ctx.context.adapter.update({
             model: 'listInvites',
             where: [{ field: 'id', value: invite.id }],
-            data: { status: 'expired' },
+            update: { status: 'expired' },
           });
           throw new InviteExpiredError();
         }
@@ -234,7 +242,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Verify email matches user
-        const user = await ctx.context.internalAdapter.findOne({
+        const user = await ctx.context.adapter.findOne<{ id: string; email: string }>({
           model: 'user',
           where: [{ field: 'id', value: userId }],
         });
@@ -244,22 +252,21 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Create share
-        const share = await ctx.context.internalAdapter.create<ListShare>({
+        const share = await ctx.context.adapter.create<ListShare>({
           model: 'listShares',
           data: {
-            id: crypto.randomUUID(),
             listId: invite.listId,
             sharedWithUserId: userId,
             permission: invite.permission,
             sharedAt: new Date(),
-          },
+          } as any,
         });
 
         // Update invite status
-        await ctx.context.internalAdapter.update({
+        await ctx.context.adapter.update({
           model: 'listInvites',
           where: [{ field: 'id', value: invite.id }],
-          data: { status: 'accepted' },
+          update: { status: 'accepted' },
         });
 
         return ctx.json({ data: share });
@@ -283,11 +290,14 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const { token } = ctx.body;
 
         // Get invite
-        const invite = await ctx.context.internalAdapter.findOne<ListInvite>({
+        const invite = await ctx.context.adapter.findOne<ListInvite>({
           model: 'listInvites',
           where: [{ field: 'token', value: token }],
         });
@@ -297,7 +307,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Verify email matches user
-        const user = await ctx.context.internalAdapter.findOne({
+        const user = await ctx.context.adapter.findOne<{ id: string; email: string }>({
           model: 'user',
           where: [{ field: 'id', value: userId }],
         });
@@ -307,10 +317,10 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Update invite status
-        await ctx.context.internalAdapter.update({
+        await ctx.context.adapter.update({
           model: 'listInvites',
           where: [{ field: 'id', value: invite.id }],
-          data: { status: 'rejected' },
+          update: { status: 'rejected' },
         });
 
         return ctx.json({ success: true });
@@ -333,11 +343,14 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
 
         // Verify list access (owner or shared with)
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [{ field: 'id', value: listId }],
         });
@@ -348,7 +361,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
 
         const isOwner = list.userId === userId;
         if (!isOwner) {
-          const share = await ctx.context.internalAdapter.findOne<ListShare>({
+          const share = await ctx.context.adapter.findOne<ListShare>({
             model: 'listShares',
             where: [
               { field: 'listId', value: listId },
@@ -362,7 +375,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Get all shares
-        const shares = await ctx.context.internalAdapter.findMany<ListShare>({
+        const shares = await ctx.context.adapter.findMany<ListShare>({
           model: 'listShares',
           where: [{ field: 'listId', value: listId }],
         });
@@ -370,7 +383,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         // Get user details for each share
         const members = await Promise.all(
           shares.map(async (share) => {
-            const user = await ctx.context.internalAdapter.findOne({
+            const user = await ctx.context.adapter.findOne<{ id: string; email: string; name: string }>({
               model: 'user',
               where: [{ field: 'id', value: share.sharedWithUserId }],
             });
@@ -386,7 +399,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         );
 
         // Include owner
-        const owner = await ctx.context.internalAdapter.findOne({
+        const owner = await ctx.context.adapter.findOne<{ id: string; email: string; name: string }>({
           model: 'user',
           where: [{ field: 'id', value: list.userId }],
         });
@@ -422,13 +435,16 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const ownerId = ctx.context.session.user.id;
         const listId = ctx.params.id;
         const memberId = ctx.params.userId;
         const { permission } = ctx.body;
 
         // Verify list ownership
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -441,7 +457,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Get share
-        const share = await ctx.context.internalAdapter.findOne<ListShare>({
+        const share = await ctx.context.adapter.findOne<ListShare>({
           model: 'listShares',
           where: [
             { field: 'listId', value: listId },
@@ -454,10 +470,10 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Update permission
-        const updated = await ctx.context.internalAdapter.update<ListShare>({
+        const updated = await ctx.context.adapter.update<ListShare>({
           model: 'listShares',
           where: [{ field: 'id', value: share.id }],
-          data: { permission },
+          update: { permission },
         });
 
         return ctx.json({ data: updated });
@@ -480,12 +496,15 @@ export const createSharingEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const ownerId = ctx.context.session.user.id;
         const listId = ctx.params.id;
         const memberId = ctx.params.userId;
 
         // Verify list ownership
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -498,7 +517,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Get share
-        const share = await ctx.context.internalAdapter.findOne<ListShare>({
+        const share = await ctx.context.adapter.findOne<ListShare>({
           model: 'listShares',
           where: [
             { field: 'listId', value: listId },
@@ -511,7 +530,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
         }
 
         // Delete share
-        await ctx.context.internalAdapter.delete({
+        await ctx.context.adapter.delete({
           model: 'listShares',
           where: [{ field: 'id', value: share.id }],
         });

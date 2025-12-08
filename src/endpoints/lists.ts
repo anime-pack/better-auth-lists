@@ -53,7 +53,9 @@ export const createListEndpoints = <TEntity = string | number>(
           },
         },
       },
-      async (ctx) => {
+      async (ctx) => {        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const query = ctx.query || {};
 
@@ -86,7 +88,7 @@ export const createListEndpoints = <TEntity = string | number>(
         }
 
         // Get lists
-        const lists = await ctx.context.internalAdapter.findMany<List>({
+        const lists = await ctx.context.adapter.findMany<List>({
           model: 'lists',
           where: whereConditions,
           limit: query.limit,
@@ -100,7 +102,7 @@ export const createListEndpoints = <TEntity = string | number>(
         // Get item counts for each list
         const listsWithCounts: ListWithItems<TEntity>[] = await Promise.all(
           lists.map(async (list) => {
-            const items = await ctx.context.internalAdapter.findMany({
+            const items = await ctx.context.adapter.findMany({
               model: 'listItems',
               where: [{ field: 'listId', value: list.id }],
             });
@@ -125,7 +127,7 @@ export const createListEndpoints = <TEntity = string | number>(
         );
 
         // Get total count for pagination
-        const totalLists = await ctx.context.internalAdapter.count?.({
+        const totalLists = await ctx.context.adapter.count?.({
           model: 'lists',
           where: whereConditions,
         }) || listsWithCounts.length;
@@ -160,11 +162,14 @@ export const createListEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
 
         // Get list
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -177,7 +182,7 @@ export const createListEndpoints = <TEntity = string | number>(
         }
 
         // Get items
-        const items = await ctx.context.internalAdapter.findMany({
+        const items = await ctx.context.adapter.findMany({
           model: 'listItems',
           where: [{ field: 'listId', value: listId }],
           sortBy: { field: 'position', direction: 'asc' },
@@ -185,7 +190,7 @@ export const createListEndpoints = <TEntity = string | number>(
 
         const response: ListWithItems<TEntity> = {
           ...list,
-          items,
+          items: items as any[],
           itemCount: items.length,
         };
 
@@ -210,11 +215,14 @@ export const createListEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const body = ctx.body;
 
         // Check custom list limit
-        const existingLists = await ctx.context.internalAdapter.findMany<List>({
+        const existingLists = await ctx.context.adapter.findMany<List>({
           model: 'lists',
           where: [
             { field: 'userId', value: userId },
@@ -228,10 +236,9 @@ export const createListEndpoints = <TEntity = string | number>(
         }
 
         // Create list
-        const newList = await ctx.context.internalAdapter.create<List>({
+        const newList = await ctx.context.adapter.create<List>({
           model: 'lists',
           data: {
-            id: crypto.randomUUID(),
             userId,
             name: body.name,
             description: body.description,
@@ -243,7 +250,7 @@ export const createListEndpoints = <TEntity = string | number>(
             ),
             createdAt: new Date(),
             updatedAt: new Date(),
-          },
+          } as any,
         });
 
         return ctx.json({ data: newList }, { status: 201 });
@@ -267,12 +274,15 @@ export const createListEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
         const body = ctx.body;
 
         // Get list
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -285,10 +295,10 @@ export const createListEndpoints = <TEntity = string | number>(
         }
 
         // Update list
-        const updated = await ctx.context.internalAdapter.update<List>({
+        const updated = await ctx.context.adapter.update<List>({
           model: 'lists',
           where: [{ field: 'id', value: listId }],
-          data: {
+          update: {
             ...body,
             updatedAt: new Date(),
           },
@@ -314,11 +324,14 @@ export const createListEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
 
         // Get list
-        const list = await ctx.context.internalAdapter.findOne<List>({
+        const list = await ctx.context.adapter.findOne<List>({
           model: 'lists',
           where: [
             { field: 'id', value: listId },
@@ -336,7 +349,7 @@ export const createListEndpoints = <TEntity = string | number>(
         }
 
         // Delete list (items will cascade)
-        await ctx.context.internalAdapter.delete({
+        await ctx.context.adapter.delete({
           model: 'lists',
           where: [{ field: 'id', value: listId }],
         });
@@ -362,11 +375,14 @@ export const createListEndpoints = <TEntity = string | number>(
         },
       },
       async (ctx) => {
+        if (!ctx.context.session) {
+          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const userId = ctx.context.session.user.id;
         const { entityId } = ctx.body;
 
         // Get all user lists
-        const lists = await ctx.context.internalAdapter.findMany<List>({
+        const lists = await ctx.context.adapter.findMany<List>({
           model: 'lists',
           where: [{ field: 'userId', value: userId }],
         });
@@ -375,7 +391,7 @@ export const createListEndpoints = <TEntity = string | number>(
         const listsWithEntity: Array<{ listId: string; listName: string }> = [];
 
         for (const list of lists) {
-          const item = await ctx.context.internalAdapter.findOne({
+          const item = await ctx.context.adapter.findOne({
             model: 'listItems',
             where: [
               { field: 'listId', value: list.id },

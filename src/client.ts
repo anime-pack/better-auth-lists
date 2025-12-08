@@ -63,7 +63,7 @@ export function listsClient<TEntity = string | number>() {
       '/invites/accept': 'POST',
       '/invites/reject': 'POST',
       '/lists/:id/members': 'GET',
-      '/lists/:id/members/:userId': 'PATCH',
+      '/lists/:id/members/:userId': 'POST',
     },
 
     // Provide custom actions

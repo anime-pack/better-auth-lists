@@ -129,7 +129,7 @@ export function listsPlugin<TEntity = string | number>(
   const listEndpoints = createListEndpoints(config);
   const itemEndpoints = createItemEndpoints(config);
   const bulkEndpoints = createBulkEndpoints(config);
-  const sharingEndpoints = createSharingEndpoints(config);
+  const sharingEndpoints = config.sharing?.enabled ? createSharingEndpoints(config) : undefined;
 
   return {
     id: 'lists',
@@ -155,10 +155,9 @@ export function listsPlugin<TEntity = string | number>(
                 // Create default favorites list when user signs up
                 after: async (user) => {
                   try {
-                    await ctx.internalAdapter.create({
+                    await ctx.adapter.create({
                       model: 'lists',
                       data: {
-                        id: crypto.randomUUID(),
                         userId: user.id,
                         name: config.defaultListName || 'Favorites',
                         description: config.defaultListDescription || 'Your favorite items',
@@ -182,12 +181,18 @@ export function listsPlugin<TEntity = string | number>(
     },
 
     // Register all endpoints
-    endpoints: {
-      ...listEndpoints,
-      ...itemEndpoints,
-      ...bulkEndpoints,
-      ...sharingEndpoints,
-    },
+    endpoints: (sharingEndpoints
+      ? {
+          ...listEndpoints,
+          ...itemEndpoints,
+          ...bulkEndpoints,
+          ...sharingEndpoints,
+        }
+      : {
+          ...listEndpoints,
+          ...itemEndpoints,
+          ...bulkEndpoints,
+        }) as any,
   };
 }
 

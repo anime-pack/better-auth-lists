@@ -21,7 +21,7 @@ export const createListsSchema = <TEntity = string | number>(
           references: {
             model: 'user',
             field: 'id',
-            onDelete: 'cascade',
+            onDelete: 'cascade' as const,
           },
           index: true,
         },
@@ -74,7 +74,7 @@ export const createListsSchema = <TEntity = string | number>(
           references: {
             model: 'lists',
             field: 'id',
-            onDelete: 'cascade',
+            onDelete: 'cascade' as const,
           },
           index: true,
         },
@@ -119,7 +119,7 @@ export const createListsSchema = <TEntity = string | number>(
             references: {
               model: 'lists',
               field: 'id',
-              onDelete: 'cascade',
+              onDelete: 'cascade' as const,
             },
             index: true,
           },
@@ -129,7 +129,7 @@ export const createListsSchema = <TEntity = string | number>(
             references: {
               model: 'user',
               field: 'id',
-              onDelete: 'cascade',
+              onDelete: 'cascade' as const,
             },
             index: true,
           },
@@ -159,7 +159,7 @@ export const createListsSchema = <TEntity = string | number>(
             references: {
               model: 'lists',
               field: 'id',
-              onDelete: 'cascade',
+              onDelete: 'cascade' as const,
             },
             index: true,
           },
@@ -169,7 +169,7 @@ export const createListsSchema = <TEntity = string | number>(
             references: {
               model: 'user',
               field: 'id',
-              onDelete: 'cascade',
+              onDelete: 'cascade' as const,
             },
           },
           inviteeEmail: {
