@@ -1,4 +1,5 @@
 import type { BetterAuthClientPlugin } from 'better-auth/client';
+import type { BetterFetchOption } from '@better-fetch/fetch';
 import type { listsPlugin } from './index';
 import type {
   List,
@@ -34,11 +35,7 @@ type SuccessResponse = { success: boolean };
  */
 type BetterAuthFetch = <T = unknown>(
   path: string,
-  options?: {
-    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
-    body?: any;
-    query?: Record<string, any>;
-  }
+  options?: BetterFetchOption
 ) => Promise<T>;
 
 /**
