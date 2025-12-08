@@ -4,6 +4,8 @@ import type {
   List,
   ListItem,
   ListWithItems,
+  ListShare,
+  ListInvite,
   CreateListInput,
   UpdateListInput,
   AddItemToListInput,
@@ -19,6 +21,25 @@ import type {
   ListExportFormat,
   SharePermission,
 } from './types';
+
+/**
+ * Response wrapper types matching server endpoint responses
+ */
+type DataResponse<T> = { data: T };
+type SuccessResponse = { success: boolean };
+
+/**
+ * Type for Better-Auth client $fetch function
+ * Returns unwrapped responses based on server endpoint structure
+ */
+type BetterAuthFetch = <T = unknown>(
+  path: string,
+  options?: {
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+    body?: any;
+    query?: Record<string, any>;
+  }
+) => Promise<T>;
 
 /**
  * Client plugin for Better-Auth Lists
@@ -67,7 +88,7 @@ export function listsClient<TEntity = string | number>() {
     },
 
     // Provide custom actions
-    getActions($fetch: any) {
+    getActions($fetch: BetterAuthFetch) {
       return {
         lists: {
           /**
@@ -85,15 +106,18 @@ export function listsClient<TEntity = string | number>() {
               });
             }
             
-            const response = await $fetch('/lists' + (params.toString() ? `?${params}` : ''));
-            return response;
+            return await $fetch<PaginatedListsResponse<TEntity>>(
+              '/lists' + (params.toString() ? `?${params}` : '')
+            );
           },
 
           /**
            * Get a specific list with items
            */
           async getList(listId: string): Promise<ListWithItems<TEntity>> {
-            const response = await $fetch(`/lists/${listId}`);
+            const response = await $fetch<DataResponse<ListWithItems<TEntity>>>(
+              `/lists/${listId}`
+            );
             return response.data;
           },
 
@@ -101,7 +125,7 @@ export function listsClient<TEntity = string | number>() {
            * Create a new list
            */
           async create(input: CreateListInput): Promise<List> {
-            const response = await $fetch('/lists', {
+            const response = await $fetch<DataResponse<List>>('/lists', {
               method: 'POST',
               body: input,
             });
@@ -112,7 +136,7 @@ export function listsClient<TEntity = string | number>() {
            * Update a list
            */
           async update(listId: string, input: UpdateListInput): Promise<List> {
-            const response = await $fetch(`/lists/${listId}`, {
+            const response = await $fetch<DataResponse<List>>(`/lists/${listId}`, {
               method: 'PATCH',
               body: input,
             });
@@ -123,7 +147,7 @@ export function listsClient<TEntity = string | number>() {
            * Delete a list
            */
           async delete(listId: string): Promise<boolean> {
-            const response = await $fetch(`/lists/${listId}`, {
+            const response = await $fetch<SuccessResponse>(`/lists/${listId}`, {
               method: 'DELETE',
             });
             return response.success;
@@ -137,7 +161,11 @@ export function listsClient<TEntity = string | number>() {
             inLists: Array<{ listId: string; listName: string }>;
             count: number;
           }> {
-            const response = await $fetch('/lists/check-entity', {
+            const response = await $fetch<DataResponse<{
+              entityId: TEntity;
+              inLists: Array<{ listId: string; listName: string }>;
+              count: number;
+            }>>('/lists/check-entity', {
               method: 'POST',
               body: { entityId },
             });
@@ -153,10 +181,13 @@ export function listsClient<TEntity = string | number>() {
             listId: string,
             input: AddItemToListInput<TEntity>
           ): Promise<ListItem<TEntity>> {
-            const response = await $fetch(`/lists/${listId}/items`, {
-              method: 'POST',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<ListItem<TEntity>>>(
+              `/lists/${listId}/items`,
+              {
+                method: 'POST',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -179,7 +210,10 @@ export function listsClient<TEntity = string | number>() {
               });
             }
             
-            return await $fetch(`/lists/${listId}/items` + (params.toString() ? `?${params}` : ''));
+            return await $fetch<{
+              data: ListItem<TEntity>[];
+              meta: { total: number; page?: number; limit: number; hasMore: boolean };
+            }>(`/lists/${listId}/items` + (params.toString() ? `?${params}` : ''));
           },
 
           /**
@@ -190,10 +224,13 @@ export function listsClient<TEntity = string | number>() {
             itemId: string,
             input: UpdateListItemInput
           ): Promise<ListItem<TEntity>> {
-            const response = await $fetch(`/lists/${listId}/items/${itemId}`, {
-              method: 'PATCH',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<ListItem<TEntity>>>(
+              `/lists/${listId}/items/${itemId}`,
+              {
+                method: 'PATCH',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -201,9 +238,12 @@ export function listsClient<TEntity = string | number>() {
            * Remove an item from a list
            */
           async remove(listId: string, itemId: string): Promise<boolean> {
-            const response = await $fetch(`/lists/${listId}/items/${itemId}`, {
-              method: 'DELETE',
-            });
+            const response = await $fetch<SuccessResponse>(
+              `/lists/${listId}/items/${itemId}`,
+              {
+                method: 'DELETE',
+              }
+            );
             return response.success;
           },
 
@@ -216,23 +256,32 @@ export function listsClient<TEntity = string | number>() {
             notes?: string
           ): Promise<{ added: boolean; item?: ListItem<TEntity> }> {
             // Get list to check if item exists
-            const list = await $fetch(`/lists/${listId}`);
-            const existingItem = list.data.items.find(
+            const listResponse = await $fetch<DataResponse<ListWithItems<TEntity>>>(
+              `/lists/${listId}`
+            );
+            const list = listResponse.data;
+            const existingItem = list.items.find(
               (item: ListItem<TEntity>) => item.entityId === entityId
             );
 
             if (existingItem) {
               // Remove item
-              await $fetch(`/lists/${listId}/items/${existingItem.id}`, {
-                method: 'DELETE',
-              });
+              await $fetch<SuccessResponse>(
+                `/lists/${listId}/items/${existingItem.id}`,
+                {
+                  method: 'DELETE',
+                }
+              );
               return { added: false };
             } else {
               // Add item
-              const response = await $fetch(`/lists/${listId}/items`, {
-                method: 'POST',
-                body: { entityId, notes },
-              });
+              const response = await $fetch<DataResponse<ListItem<TEntity>>>(
+                `/lists/${listId}/items`,
+                {
+                  method: 'POST',
+                  body: { entityId, notes },
+                }
+              );
               return { added: true, item: response.data };
             }
           },
@@ -246,10 +295,13 @@ export function listsClient<TEntity = string | number>() {
             listId: string,
             input: BatchAddItemsInput<TEntity>
           ): Promise<BatchOperationResult<ListItem<TEntity>>> {
-            const response = await $fetch(`/lists/${listId}/items/batch`, {
-              method: 'POST',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<BatchOperationResult<ListItem<TEntity>>>>(
+              `/lists/${listId}/items/batch`,
+              {
+                method: 'POST',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -260,10 +312,13 @@ export function listsClient<TEntity = string | number>() {
             listId: string,
             input: BatchRemoveItemsInput<TEntity>
           ): Promise<BatchOperationResult<string>> {
-            const response = await $fetch(`/lists/${listId}/items/batch`, {
-              method: 'DELETE',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<BatchOperationResult<string>>>(
+              `/lists/${listId}/items/batch`,
+              {
+                method: 'DELETE',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -273,10 +328,13 @@ export function listsClient<TEntity = string | number>() {
           async moveItems(
             input: MoveItemsInput
           ): Promise<BatchOperationResult<ListItem<TEntity>>> {
-            const response = await $fetch('/lists/move-items', {
-              method: 'POST',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<BatchOperationResult<ListItem<TEntity>>>>(
+              '/lists/move-items',
+              {
+                method: 'POST',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -284,10 +342,13 @@ export function listsClient<TEntity = string | number>() {
            * Duplicate a list
            */
           async duplicate(listId: string, input?: DuplicateListInput): Promise<List> {
-            const response = await $fetch(`/lists/${listId}/duplicate`, {
-              method: 'POST',
-              body: input || {},
-            });
+            const response = await $fetch<DataResponse<List>>(
+              `/lists/${listId}/duplicate`,
+              {
+                method: 'POST',
+                body: input || {},
+              }
+            );
             return response.data;
           },
 
@@ -298,7 +359,10 @@ export function listsClient<TEntity = string | number>() {
             list: List;
             importResult: BatchOperationResult<ListItem<TEntity>>;
           }> {
-            const response = await $fetch('/lists/import', {
+            const response = await $fetch<DataResponse<{
+              list: List;
+              importResult: BatchOperationResult<ListItem<TEntity>>;
+            }>>('/lists/import', {
               method: 'POST',
               body: { data },
             });
@@ -309,7 +373,9 @@ export function listsClient<TEntity = string | number>() {
            * Export a list to JSON
            */
           async export(listId: string): Promise<ListExportFormat<TEntity>> {
-            const response = await $fetch(`/lists/${listId}/export`);
+            const response = await $fetch<DataResponse<ListExportFormat<TEntity>>>(
+              `/lists/${listId}/export`
+            );
             return response.data;
           },
         },
@@ -319,10 +385,13 @@ export function listsClient<TEntity = string | number>() {
            * Invite a user to a list
            */
           async invite(listId: string, input: ShareListInput) {
-            const response = await $fetch(`/lists/${listId}/invite`, {
-              method: 'POST',
-              body: input,
-            });
+            const response = await $fetch<DataResponse<ListInvite>>(
+              `/lists/${listId}/invite`,
+              {
+                method: 'POST',
+                body: input,
+              }
+            );
             return response.data;
           },
 
@@ -330,7 +399,9 @@ export function listsClient<TEntity = string | number>() {
            * Get all invites for a list
            */
           async getInvites(listId: string) {
-            const response = await $fetch(`/lists/${listId}/invites`);
+            const response = await $fetch<DataResponse<ListInvite[]>>(
+              `/lists/${listId}/invites`
+            );
             return response.data;
           },
 
@@ -338,10 +409,13 @@ export function listsClient<TEntity = string | number>() {
            * Accept a list invitation
            */
           async acceptInvite(token: string) {
-            const response = await $fetch('/invites/accept', {
-              method: 'POST',
-              body: { token },
-            });
+            const response = await $fetch<DataResponse<ListShare>>(
+              '/invites/accept',
+              {
+                method: 'POST',
+                body: { token },
+              }
+            );
             return response.data;
           },
 
@@ -349,10 +423,13 @@ export function listsClient<TEntity = string | number>() {
            * Reject a list invitation
            */
           async rejectInvite(token: string) {
-            const response = await $fetch('/invites/reject', {
-              method: 'POST',
-              body: { token },
-            });
+            const response = await $fetch<SuccessResponse>(
+              '/invites/reject',
+              {
+                method: 'POST',
+                body: { token },
+              }
+            );
             return response.success;
           },
 
@@ -360,7 +437,21 @@ export function listsClient<TEntity = string | number>() {
            * Get all members of a list
            */
           async getMembers(listId: string) {
-            const response = await $fetch(`/lists/${listId}/members`);
+            const response = await $fetch<DataResponse<{
+              owner: {
+                userId: string;
+                email?: string;
+                name?: string;
+                permission: SharePermission;
+              };
+              members: Array<{
+                userId: string;
+                email?: string;
+                name?: string;
+                permission: SharePermission;
+                sharedAt: Date;
+              }>;
+            }>>(`/lists/${listId}/members`);
             return response.data;
           },
 
@@ -372,10 +463,13 @@ export function listsClient<TEntity = string | number>() {
             userId: string,
             permission: SharePermission
           ) {
-            const response = await $fetch(`/lists/${listId}/members/${userId}`, {
-              method: 'PATCH',
-              body: { permission },
-            });
+            const response = await $fetch<DataResponse<ListShare>>(
+              `/lists/${listId}/members/${userId}`,
+              {
+                method: 'PATCH',
+                body: { permission },
+              }
+            );
             return response.data;
           },
 
@@ -383,9 +477,12 @@ export function listsClient<TEntity = string | number>() {
            * Revoke a user's access to a list
            */
           async revoke(listId: string, userId: string) {
-            const response = await $fetch(`/lists/${listId}/members/${userId}`, {
-              method: 'DELETE',
-            });
+            const response = await $fetch<SuccessResponse>(
+              `/lists/${listId}/members/${userId}`,
+              {
+                method: 'DELETE',
+              }
+            );
             return response.success;
           },
         },
