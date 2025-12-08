@@ -8,6 +8,8 @@
 > **Status:** Feature-complete with Better-Auth v1.4.5+ compatibility.
 > 
 > ⚠️ **Minimum Version:** Requires Better-Auth v1.4.5 or higher due to breaking API changes in the adapter interface.
+> 
+> **Latest Update (Dec 8, 2025):** Fixed authentication by adding `sessionMiddleware` to all endpoints. The `createAuthEndpoint` function requires explicit middleware to populate session context.
 
 A fully generic, type-safe lists/collections plugin for [Better-Auth](https://better-auth.com) that works with any entity type (anime, movies, books, products, etc.).
 

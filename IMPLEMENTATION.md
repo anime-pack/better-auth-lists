@@ -248,21 +248,29 @@ Each includes:
    - Properly typed `ctx.context.session` as nullable
    - Implemented early returns for unauthorized access
 
-3. **Schema Type Definitions** ✅
+3. **Session Middleware** ✅ **[CRITICAL FIX - Dec 8, 2025]**
+   - **Root Cause:** `createAuthEndpoint` does NOT automatically populate session
+   - **Solution:** Added `use: [sessionMiddleware]` to ALL 23 endpoints
+   - **Files Modified:** lists.ts (6), items.ts (4), bulk.ts (6), sharing.ts (7)
+   - **Import:** `import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api'`
+   - **Pattern:** All endpoints now include `use: [sessionMiddleware]` in config object
+   - This middleware parses session cookies and populates `ctx.context.session`
+
+4. **Schema Type Definitions** ✅
    - Changed `onDelete: 'cascade'` → `onDelete: 'cascade' as const`
    - Applied to all 4 schema references
    - Proper literal type for foreign key constraints
 
-4. **Endpoint Registration** ✅
+5. **Endpoint Registration** ✅
    - Implemented conditional endpoint merging based on `config.sharing?.enabled`
    - Prevents undefined endpoint values when sharing is disabled
    - Type-safe endpoint composition
 
-5. **Client Plugin** ✅
+6. **Client Plugin** ✅
    - Changed `PATCH` → `POST` for `/lists/:id/members/:userId`
    - Aligned with Better-Auth conventions
 
-6. **Type Safety Improvements** ✅
+7. **Type Safety Improvements** ✅
    - Removed 6 unnecessary `as any` casts in sharing.ts
    - Added proper generic type parameters: `adapter.findOne<{ id: string; email: string }>()`
    - Retained legitimate casts for `TEntity` runtime conversions
