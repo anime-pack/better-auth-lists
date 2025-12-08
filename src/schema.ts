@@ -8,13 +8,8 @@ export const createListsSchema = <TEntity = string | number>(
 ) => {
   const baseSchema = {
     lists: {
+      modelName: 'list',
       fields: {
-        id: {
-          type: 'string' as const,
-          required: true,
-          primaryKey: true,
-          defaultValue: () => crypto.randomUUID(),
-        },
         userId: {
           type: 'string' as const,
           required: true,
@@ -61,13 +56,8 @@ export const createListsSchema = <TEntity = string | number>(
       },
     },
     listItems: {
+      modelName: 'listItem',
       fields: {
-        id: {
-          type: 'string' as const,
-          required: true,
-          primaryKey: true,
-          defaultValue: () => crypto.randomUUID(),
-        },
         listId: {
           type: 'string' as const,
           required: true,
@@ -106,13 +96,8 @@ export const createListsSchema = <TEntity = string | number>(
     return {
       ...baseSchema,
       listShares: {
+        modelName: 'listShare',
         fields: {
-          id: {
-            type: 'string' as const,
-            required: true,
-            primaryKey: true,
-            defaultValue: () => crypto.randomUUID(),
-          },
           listId: {
             type: 'string' as const,
             required: true,
@@ -146,13 +131,8 @@ export const createListsSchema = <TEntity = string | number>(
         },
       },
       listInvites: {
+        modelName: 'listInvite',
         fields: {
-          id: {
-            type: 'string' as const,
-            required: true,
-            primaryKey: true,
-            defaultValue: () => crypto.randomUUID(),
-          },
           listId: {
             type: 'string' as const,
             required: true,
