@@ -1,4 +1,4 @@
-import { createAuthEndpoint } from 'better-auth/api';
+import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
 import { z } from 'zod';
 import type { ListsPluginOptions, List, ListWithItems, PaginatedListsResponse } from '../types';
 import {
@@ -29,6 +29,7 @@ export const createListEndpoints = <TEntity = string | number>(
       {
         method: 'GET',
         query: listsQuerySchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Get user lists',
@@ -156,6 +157,7 @@ export const createListEndpoints = <TEntity = string | number>(
       '/lists/:id',
       {
         method: 'GET',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Get list by ID',
@@ -212,6 +214,7 @@ export const createListEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: createListSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Create a new list',
@@ -274,6 +277,7 @@ export const createListEndpoints = <TEntity = string | number>(
       {
         method: 'PATCH',
         body: updateListSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Update a list',
@@ -327,6 +331,7 @@ export const createListEndpoints = <TEntity = string | number>(
       '/lists/:id',
       {
         method: 'DELETE',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Delete a list',
@@ -381,6 +386,7 @@ export const createListEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: checkEntitySchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Check entity in lists',

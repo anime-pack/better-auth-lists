@@ -1,4 +1,4 @@
-import { createAuthEndpoint } from 'better-auth/api';
+import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
 import type {
   ListsPluginOptions,
   List,
@@ -42,6 +42,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: shareListSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Invite user to list',
@@ -156,6 +157,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       '/lists/:id/invites',
       {
         method: 'GET',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Get list invites',
@@ -206,6 +208,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: inviteActionSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Accept invite',
@@ -290,6 +293,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: inviteActionSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Reject invite',
@@ -346,6 +350,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       '/lists/:id/members',
       {
         method: 'GET',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Get list members',
@@ -441,6 +446,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       {
         method: 'PATCH',
         body: z.object({ permission: z.enum(['view', 'edit', 'admin']) }),
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Update member permission',
@@ -505,6 +511,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
       '/lists/:id/members/:userId',
       {
         method: 'DELETE',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Revoke access',

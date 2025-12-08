@@ -1,4 +1,4 @@
-import { createAuthEndpoint } from 'better-auth/api';
+import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
 import type { ListsPluginOptions, List, ListItem } from '../types';
 import {
   ListNotFoundError,
@@ -29,6 +29,7 @@ export const createItemEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: addItemSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Add item to list',
@@ -119,6 +120,7 @@ export const createItemEndpoints = <TEntity = string | number>(
       {
         method: 'GET',
         query: itemsQuerySchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Get list items',
@@ -195,6 +197,7 @@ export const createItemEndpoints = <TEntity = string | number>(
       {
         method: 'PATCH',
         body: updateItemSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Update list item',
@@ -259,6 +262,7 @@ export const createItemEndpoints = <TEntity = string | number>(
       '/lists/:listId/items/:itemId',
       {
         method: 'DELETE',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Remove item from list',

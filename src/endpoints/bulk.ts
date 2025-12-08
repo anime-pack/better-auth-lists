@@ -1,4 +1,4 @@
-import { createAuthEndpoint } from 'better-auth/api';
+import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
 import type {
   ListsPluginOptions,
   List,
@@ -35,6 +35,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: batchAddItemsSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Batch add items',
@@ -160,6 +161,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
       {
         method: 'DELETE',
         body: batchRemoveItemsSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Batch remove items',
@@ -298,6 +300,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: moveItemsSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Move items between lists',
@@ -439,6 +442,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
       {
         method: 'POST',
         body: duplicateListSchema,
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Duplicate list',
@@ -524,6 +528,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
         body: z.object({
           data: z.any(), // ListExportFormat
         }),
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Import list',
@@ -613,6 +618,7 @@ export const createBulkEndpoints = <TEntity = string | number>(
       '/lists/:id/export',
       {
         method: 'GET',
+        use: [sessionMiddleware],
         metadata: {
           openapi: {
             summary: 'Export list',
