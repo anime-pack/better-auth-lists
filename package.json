@@ -1,11 +1,55 @@
 {
   "name": "@anime-pack/better-auth-lists",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "Generic, type-safe lists plugin for Better-Auth supporting any entity type",
   "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts src/client.ts --outdir dist --target node --format esm --sourcemap && tsc --emitDeclarationOnly",
+    "dev": "bun build src/index.ts src/client.ts --outdir dist --target node --format esm --sourcemap --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "better-auth",
+    "plugin",
+    "lists",
+    "playlist",
+    "collection",
+    "favorites",
+    "typescript",
+    "generic"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anime-pack/better-auth-lists.git"
+  },
+  "license": "MIT",
   "peerDependencies": {
-    "typescript": "^5"
+    "better-auth": "^1.4.5",
+    "typescript": "^5",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.2"
   }
 }

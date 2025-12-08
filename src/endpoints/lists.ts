@@ -1,0 +1,404 @@
+import { createAuthEndpoint } from 'better-auth/api';
+import { z } from 'zod';
+import type { ListsPluginOptions, List, ListWithItems, PaginatedListsResponse } from '../types';
+import {
+  ListNotFoundError,
+  ListLimitReachedError,
+  CannotDeleteDefaultError,
+  PermissionDeniedError,
+} from '../errors';
+import {
+  createListSchema,
+  updateListSchema,
+  listsQuerySchema,
+  checkEntitySchema,
+} from '../validation';
+
+/**
+ * Create list management endpoints
+ */
+export const createListEndpoints = <TEntity = string | number>(
+  options: ListsPluginOptions<TEntity>
+) => {
+  return {
+    /**
+     * GET /api/auth/lists - Get all lists for current user
+     */
+    getUserLists: createAuthEndpoint(
+      '/lists',
+      {
+        method: 'GET',
+        query: listsQuerySchema,
+        metadata: {
+          openapi: {
+            summary: 'Get user lists',
+            description: 'Retrieve all lists for the authenticated user with filtering and pagination',
+            tags: ['Lists'],
+            responses: {
+              200: {
+                description: 'Lists retrieved successfully',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        data: { type: 'array' },
+                        meta: { type: 'object' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const query = ctx.query || {};
+
+        // Build where conditions
+        const whereConditions: any[] = [{ field: 'userId', value: userId }];
+
+        if (query.type) {
+          whereConditions.push({ field: 'type', value: query.type });
+        }
+
+        if (query.isPublic !== undefined) {
+          whereConditions.push({ field: 'isPublic', value: query.isPublic });
+        }
+
+        // Date filters
+        if (query.createdAfter) {
+          whereConditions.push({
+            field: 'createdAt',
+            operator: 'gte',
+            value: new Date(query.createdAfter),
+          });
+        }
+
+        if (query.createdBefore) {
+          whereConditions.push({
+            field: 'createdAt',
+            operator: 'lte',
+            value: new Date(query.createdBefore),
+          });
+        }
+
+        // Get lists
+        const lists = await ctx.context.internalAdapter.findMany<List>({
+          model: 'lists',
+          where: whereConditions,
+          limit: query.limit,
+          offset: query.page ? (query.page - 1) * (query.limit || 20) : 0,
+          sortBy: {
+            field: query.sortBy || 'createdAt',
+            direction: query.order || 'desc',
+          },
+        });
+
+        // Get item counts for each list
+        const listsWithCounts: ListWithItems<TEntity>[] = await Promise.all(
+          lists.map(async (list) => {
+            const items = await ctx.context.internalAdapter.findMany({
+              model: 'listItems',
+              where: [{ field: 'listId', value: list.id }],
+            });
+
+            // Apply search filter if needed
+            let filteredLists = lists;
+            if (query.search) {
+              const searchLower = query.search.toLowerCase();
+              filteredLists = lists.filter(
+                (l) =>
+                  l.name.toLowerCase().includes(searchLower) ||
+                  l.description?.toLowerCase().includes(searchLower)
+              );
+            }
+
+            return {
+              ...list,
+              items: [],
+              itemCount: items.length,
+            };
+          })
+        );
+
+        // Get total count for pagination
+        const totalLists = await ctx.context.internalAdapter.count?.({
+          model: 'lists',
+          where: whereConditions,
+        }) || listsWithCounts.length;
+
+        const response: PaginatedListsResponse<TEntity> = {
+          data: listsWithCounts,
+          meta: {
+            total: totalLists,
+            page: query.page,
+            limit: query.limit || 20,
+            hasMore: totalLists > (query.page || 1) * (query.limit || 20),
+          },
+        };
+
+        return ctx.json(response);
+      }
+    ),
+
+    /**
+     * GET /api/auth/lists/:id - Get specific list with items
+     */
+    getList: createAuthEndpoint(
+      '/lists/:id',
+      {
+        method: 'GET',
+        metadata: {
+          openapi: {
+            summary: 'Get list by ID',
+            description: 'Retrieve a specific list with all its items',
+            tags: ['Lists'],
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const listId = ctx.params.id;
+
+        // Get list
+        const list = await ctx.context.internalAdapter.findOne<List>({
+          model: 'lists',
+          where: [
+            { field: 'id', value: listId },
+            { field: 'userId', value: userId },
+          ],
+        });
+
+        if (!list) {
+          throw new ListNotFoundError(listId);
+        }
+
+        // Get items
+        const items = await ctx.context.internalAdapter.findMany({
+          model: 'listItems',
+          where: [{ field: 'listId', value: listId }],
+          sortBy: { field: 'position', direction: 'asc' },
+        });
+
+        const response: ListWithItems<TEntity> = {
+          ...list,
+          items,
+          itemCount: items.length,
+        };
+
+        return ctx.json({ data: response });
+      }
+    ),
+
+    /**
+     * POST /api/auth/lists - Create new list
+     */
+    createList: createAuthEndpoint(
+      '/lists',
+      {
+        method: 'POST',
+        body: createListSchema,
+        metadata: {
+          openapi: {
+            summary: 'Create a new list',
+            description: 'Create a new custom list for the authenticated user',
+            tags: ['Lists'],
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const body = ctx.body;
+
+        // Check custom list limit
+        const existingLists = await ctx.context.internalAdapter.findMany<List>({
+          model: 'lists',
+          where: [
+            { field: 'userId', value: userId },
+            { field: 'type', value: 'custom' },
+          ],
+        });
+
+        const maxLists = options.maxCustomLists ?? 10;
+        if (existingLists.length >= maxLists) {
+          throw new ListLimitReachedError(maxLists);
+        }
+
+        // Create list
+        const newList = await ctx.context.internalAdapter.create<List>({
+          model: 'lists',
+          data: {
+            id: crypto.randomUUID(),
+            userId,
+            name: body.name,
+            description: body.description,
+            type: 'custom',
+            isPublic: body.isPublic ?? false,
+            maxItems: Math.min(
+              body.maxItems ?? 100,
+              options.maxItemsPerList ?? 100
+            ),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        return ctx.json({ data: newList }, { status: 201 });
+      }
+    ),
+
+    /**
+     * PATCH /api/auth/lists/:id - Update list
+     */
+    updateList: createAuthEndpoint(
+      '/lists/:id',
+      {
+        method: 'PATCH',
+        body: updateListSchema,
+        metadata: {
+          openapi: {
+            summary: 'Update a list',
+            description: 'Update list properties (name, description, visibility, etc.)',
+            tags: ['Lists'],
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const listId = ctx.params.id;
+        const body = ctx.body;
+
+        // Get list
+        const list = await ctx.context.internalAdapter.findOne<List>({
+          model: 'lists',
+          where: [
+            { field: 'id', value: listId },
+            { field: 'userId', value: userId },
+          ],
+        });
+
+        if (!list) {
+          throw new ListNotFoundError(listId);
+        }
+
+        // Update list
+        const updated = await ctx.context.internalAdapter.update<List>({
+          model: 'lists',
+          where: [{ field: 'id', value: listId }],
+          data: {
+            ...body,
+            updatedAt: new Date(),
+          },
+        });
+
+        return ctx.json({ data: updated });
+      }
+    ),
+
+    /**
+     * DELETE /api/auth/lists/:id - Delete list
+     */
+    deleteList: createAuthEndpoint(
+      '/lists/:id',
+      {
+        method: 'DELETE',
+        metadata: {
+          openapi: {
+            summary: 'Delete a list',
+            description: 'Delete a custom list (cannot delete default favorites list)',
+            tags: ['Lists'],
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const listId = ctx.params.id;
+
+        // Get list
+        const list = await ctx.context.internalAdapter.findOne<List>({
+          model: 'lists',
+          where: [
+            { field: 'id', value: listId },
+            { field: 'userId', value: userId },
+          ],
+        });
+
+        if (!list) {
+          throw new ListNotFoundError(listId);
+        }
+
+        // Prevent deleting default list
+        if (list.type === 'default') {
+          throw new CannotDeleteDefaultError();
+        }
+
+        // Delete list (items will cascade)
+        await ctx.context.internalAdapter.delete({
+          model: 'lists',
+          where: [{ field: 'id', value: listId }],
+        });
+
+        return ctx.json({ success: true });
+      }
+    ),
+
+    /**
+     * GET /api/auth/lists/check-entity/:entityId - Check if entity is in any list
+     */
+    checkEntityInLists: createAuthEndpoint(
+      '/lists/check-entity',
+      {
+        method: 'POST',
+        body: checkEntitySchema,
+        metadata: {
+          openapi: {
+            summary: 'Check entity in lists',
+            description: 'Check if an entity exists in any of the user lists',
+            tags: ['Lists'],
+          },
+        },
+      },
+      async (ctx) => {
+        const userId = ctx.context.session.user.id;
+        const { entityId } = ctx.body;
+
+        // Get all user lists
+        const lists = await ctx.context.internalAdapter.findMany<List>({
+          model: 'lists',
+          where: [{ field: 'userId', value: userId }],
+        });
+
+        // Check each list for the entity
+        const listsWithEntity: Array<{ listId: string; listName: string }> = [];
+
+        for (const list of lists) {
+          const item = await ctx.context.internalAdapter.findOne({
+            model: 'listItems',
+            where: [
+              { field: 'listId', value: list.id },
+              { field: 'entityId', value: String(entityId) },
+            ],
+          });
+
+          if (item) {
+            listsWithEntity.push({
+              listId: list.id,
+              listName: list.name,
+            });
+          }
+        }
+
+        return ctx.json({
+          data: {
+            entityId,
+            inLists: listsWithEntity,
+            count: listsWithEntity.length,
+          },
+        });
+      }
+    ),
+  };
+};
