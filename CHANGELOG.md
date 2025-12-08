@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-08
+
+### Added
+- **Feature Flag:** `createDefaultList` option to control automatic default list creation
+  - Enabled by default (`true`) for backward compatibility
+  - When enabled, creates default "Favorites" list on new user signup
+  - **Lazy Creation:** Automatically creates default list for existing users on first query
+  - Solves migration issue when adding plugin to Better-Auth instances with existing users
+  - Can be disabled by setting `createDefaultList: false` in plugin options
+
+### Changed
+- Default list creation is now opt-in via feature flag instead of always-on
+- Existing users without lists now get a default list automatically on first `getUserLists` query
+
 ## [0.1.2] - 2025-12-08
 
 ### Fixed

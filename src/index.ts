@@ -118,6 +118,7 @@ export function listsPlugin<TEntity = string | number>(
     maxItemsPerList: 100,
     defaultListName: 'Favorites',
     defaultListDescription: 'Your favorite items',
+    createDefaultList: true,
     ...options,
   };
 
@@ -152,8 +153,12 @@ export function listsPlugin<TEntity = string | number>(
           databaseHooks: {
             user: {
               create: {
-                // Create default favorites list when user signs up
+                // Create default favorites list when user signs up (if enabled)
                 after: async (user) => {
+                  if (!config.createDefaultList) {
+                    return;
+                  }
+                  
                   try {
                     await ctx.adapter.create({
                       model: 'lists',

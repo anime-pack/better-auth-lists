@@ -272,6 +272,13 @@ export interface ListsPluginOptions<TEntity = string | number> {
   defaultListDescription?: string;
 
   /**
+   * Automatically create a default list for new users on signup
+   * When enabled, also creates default list for existing users on first query if they have none
+   * @default true
+   */
+  createDefaultList?: boolean;
+
+  /**
    * Optional validation function to verify entity exists before adding to list
    * Useful for validating against external APIs (e.g., MAL API for anime)
    * @param entityId - The entity ID to validate

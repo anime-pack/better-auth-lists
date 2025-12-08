@@ -15,6 +15,48 @@ import {
 } from '../validation';
 
 /**
+ * Helper function to create default list for existing users (lazy creation)
+ */
+async function ensureDefaultList<TEntity>(
+  adapter: any,
+  userId: string,
+  options: ListsPluginOptions<TEntity>
+): Promise<void> {
+  if (!options.createDefaultList) {
+    return;
+  }
+
+  try {
+    // Check if user has any lists
+    const existingLists = await adapter.findMany({
+      model: 'lists',
+      where: [{ field: 'userId', value: userId }],
+      limit: 1,
+    });
+
+    // If user has no lists, create default one
+    if (existingLists.length === 0) {
+      await adapter.create({
+        model: 'lists',
+        data: {
+          userId,
+          name: options.defaultListName || 'Favorites',
+          description: options.defaultListDescription || 'Your favorite items',
+          type: 'default',
+          isPublic: false,
+          maxItems: options.maxItemsPerList || 100,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Failed to create default list for existing user:', error);
+    // Don't throw - query should still proceed
+  }
+}
+
+/**
  * Create list management endpoints
  */
 export const createListEndpoints = <TEntity = string | number>(
@@ -62,6 +104,9 @@ export const createListEndpoints = <TEntity = string | number>(
         }
         const userId = ctx.context.session.user.id;
         const query = ctx.query || {};
+
+        // Ensure existing users without lists get a default list (lazy creation)
+        await ensureDefaultList(ctx.context.adapter, userId, options);
 
         // Build where conditions
         const whereConditions: any[] = [{ field: 'userId', value: userId }];

@@ -261,6 +261,15 @@ interface ListsPluginOptions<TEntity = string | number> {
   defaultListDescription?: string;
 
   /**
+   * Automatically create default list for users
+   * - When true: Creates default list on new user signup
+   * - When true: Also creates default list for existing users on first query (lazy creation)
+   * - When false: No automatic list creation
+   * @default true
+   */
+  createDefaultList?: boolean;
+
+  /**
    * Optional validation function for entities
    * Useful for validating against external APIs
    */
@@ -351,6 +360,51 @@ import type {
   // ... and more
 } from '@anime-pack/better-auth-lists';
 ```
+
+## Migration & Existing Users
+
+### Adding Plugin to Existing Better-Auth Instances
+
+When adding this plugin to a Better-Auth instance that already has users, the plugin automatically handles the migration:
+
+**Default Behavior (`createDefaultList: true`):**
+- ✅ **New users**: Get default list immediately on signup
+- ✅ **Existing users**: Get default list automatically on first query to `/lists` endpoint
+- ✅ **Lazy creation**: No manual migration needed - lists are created on-demand
+
+**Example Scenario:**
+```typescript
+// Your existing Better-Auth setup with 1000 users
+const auth = betterAuth({
+  plugins: [
+    listsPlugin<number>({
+      createDefaultList: true, // Default - enables lazy creation
+      defaultListName: 'Favorites',
+    }),
+  ],
+});
+
+// Existing user logs in and queries their lists
+// → Plugin detects they have no lists
+// → Automatically creates default "Favorites" list
+// → Returns the newly created list
+const lists = await authClient.lists.getUserLists();
+// First call: Creates + returns default list
+// Subsequent calls: Returns existing list
+```
+
+**Disabling Automatic Creation:**
+```typescript
+listsPlugin<number>({
+  createDefaultList: false, // Users must manually create their first list
+})
+```
+
+**Why This Matters:**
+- No need to run database migrations for existing users
+- No risk of creating thousands of lists at once
+- Users get lists only when they actually use the feature
+- Clean migration path for production deployments
 
 ## Use Cases & Examples
 
