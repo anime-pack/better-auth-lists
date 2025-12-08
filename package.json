@@ -22,8 +22,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build src/index.ts src/client.ts --outdir dist --target node --format esm --sourcemap && tsc --emitDeclarationOnly",
-    "dev": "bun build src/index.ts src/client.ts --outdir dist --target node --format esm --sourcemap --watch",
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap && bun build src/client.ts --outdir dist --target browser --format esm --sourcemap && tsc --emitDeclarationOnly",
+    "dev": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build"
   },
