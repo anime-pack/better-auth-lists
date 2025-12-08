@@ -39,7 +39,10 @@ export const createItemEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
@@ -126,7 +129,10 @@ export const createItemEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
@@ -199,7 +205,10 @@ export const createItemEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.listId;
@@ -260,7 +269,10 @@ export const createItemEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.listId;

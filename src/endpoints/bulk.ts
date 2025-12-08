@@ -45,7 +45,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
@@ -167,7 +170,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
@@ -302,7 +308,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const { sourceListId, targetListId, itemIds } = ctx.body;
@@ -440,7 +449,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
@@ -522,7 +534,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const exportData = ctx.body.data as ListExportFormat<TEntity>;
@@ -608,7 +623,10 @@ export const createBulkEndpoints = <TEntity = string | number>(
       },
       async (ctx) => {
         if (!ctx.context.session) {
-          return ctx.json({ error: 'Unauthorized' }, { status: 401 });
+          return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         const userId = ctx.context.session.user.id;
         const listId = ctx.params.id;
