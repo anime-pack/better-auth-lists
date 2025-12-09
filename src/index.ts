@@ -15,7 +15,7 @@ import { createSharingEndpoints } from './endpoints/sharing';
  * - Test type inference with tsd
  * - Provide test utilities for consumers
  * - Test edge cases: concurrent operations, limits, validation
- * 
+ *
  * TODO: Performance Optimization
  * - Implement caching strategies for frequently accessed lists
  * - Add database query optimization hints
@@ -23,41 +23,41 @@ import { createSharingEndpoints } from './endpoints/sharing';
  * - Add cursor-based pagination for better performance
  * - Document recommended database indexes for production
  * - Add batch query optimization for list item counts
- * 
+ *
  * TODO: Webhook/Event System
  * - Add optional webhook configuration for list events
  * - Emit events through Better-Auth's hook system
  * - Support custom event handlers (onListCreated, onItemAdded, etc.)
  * - Enable analytics/logging integrations
  * - Document event payload schemas
- * 
+ *
  * TODO: Rate Limiting
  * - Implement granular rate limits for bulk operations
  * - Set stricter limits for batch operations vs single operations
  * - Add configurable per-user quotas
  * - Document recommended rate limit values
  * - Example: 100 items/request for batch add, 10 duplications/hour
- * 
+ *
  * TODO: Generic Import Adapters
  * - Create pluggable import adapter interface
  * - Support popular services (MyAnimeList XML, Trakt JSON, Letterboxd CSV)
  * - Provide validation and transformation helpers
  * - Make adapters service-agnostic where possible
  * - Document adapter implementation guide
- * 
+ *
  * TODO: Offline Support Patterns
  * - Document client-side caching with optimistic updates
  * - Provide sync conflict resolution examples
  * - Suggest IndexedDB/localStorage integration patterns
  * - Include sample service worker for offline queue
  * - Document best practices for offline-first architectures
- * 
+ *
  * TODO: Multi-Tenancy Support
  * - Add optional organization/workspace scoping
  * - Support team-based list ownership beyond userId
  * - Enable list inheritance/sharing at org level
  * - Document integration with Better-Auth organization plugin
- * 
+ *
  * TODO: Soft Delete Feature
  * - Implement as feature flag option
  * - Add deletedAt timestamp to schema
@@ -68,16 +68,16 @@ import { createSharingEndpoints } from './endpoints/sharing';
 
 /**
  * Creates a generic, type-safe lists plugin for Better-Auth
- * 
+ *
  * @template TEntity - The type of entity IDs (string | number)
  * @param options - Plugin configuration options
  * @returns BetterAuthPlugin instance
- * 
+ *
  * @example
  * ```typescript
  * // For anime IDs (numbers)
  * import { listsPlugin } from '@anime-pack/better-auth-lists';
- * 
+ *
  * const auth = betterAuth({
  *   plugins: [
  *     listsPlugin<number>({
@@ -96,7 +96,7 @@ import { createSharingEndpoints } from './endpoints/sharing';
  *   ],
  * });
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // For movie IDs (strings)
@@ -111,94 +111,99 @@ import { createSharingEndpoints } from './endpoints/sharing';
  * ```
  */
 export function listsPlugin<TEntity = string | number>(
-  options?: ListsPluginOptions<TEntity>
+    options?: ListsPluginOptions<TEntity>
 ): BetterAuthPlugin {
-  const config: ListsPluginOptions<TEntity> = {
-    maxCustomLists: 10,
-    maxItemsPerList: 100,
-    defaultListName: 'Favorites',
-    defaultListDescription: 'Your favorite items',
-    createDefaultList: true,
-    ...options,
-  };
+    const config: ListsPluginOptions<TEntity> = {
+        maxCustomLists: 10,
+        maxItemsPerList: 100,
+        defaultListName: 'Favorites',
+        defaultListDescription: 'Your favorite items',
+        createDefaultList: true,
+        ...options,
+    };
 
-  // Create schema with optional sharing tables
-  const baseSchema = createListsSchema(config);
-  const schema = mergeSchema(baseSchema, config.schema);
+    // Create schema with optional sharing tables
+    const baseSchema = createListsSchema(config);
+    const schema = mergeSchema(baseSchema, config.schema);
 
-  // Create all endpoints
-  const listEndpoints = createListEndpoints(config);
-  const itemEndpoints = createItemEndpoints(config);
-  const bulkEndpoints = createBulkEndpoints(config);
-  const sharingEndpoints = config.sharing?.enabled ? createSharingEndpoints(config) : undefined;
+    // Create all endpoints
+    const listEndpoints = createListEndpoints(config);
+    const itemEndpoints = createItemEndpoints(config);
+    const bulkEndpoints = createBulkEndpoints(config);
+    const sharingEndpoints = config.sharing?.enabled ? createSharingEndpoints(config) : undefined;
 
-  return {
-    id: 'lists',
-    
-    // Register database schema
-    schema,
+    return {
+        id: 'lists',
 
-    // Error codes for consistent error handling
-    $ERROR_CODES: ListErrorCode,
+        // Register database schema
+        schema,
 
-    // Type inference for client
-    $Infer: {
-      // Types will be automatically inferred by Better-Auth
-    },
+        // Error codes for consistent error handling
+        $ERROR_CODES: ListErrorCode,
 
-    // Lifecycle hooks
-    init(ctx) {
-      return {
-        options: {
-          databaseHooks: {
-            user: {
-              create: {
-                // Create default favorites list when user signs up (if enabled)
-                after: async (user) => {
-                  if (!config.createDefaultList) {
-                    return;
-                  }
-                  
-                  try {
-                    await ctx.adapter.create({
-                      model: 'lists',
-                      data: {
-                        userId: user.id,
-                        name: config.defaultListName || 'Favorites',
-                        description: config.defaultListDescription || 'Your favorite items',
-                        type: 'default',
-                        isPublic: false,
-                        maxItems: config.maxItemsPerList || 100,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                      },
-                    });
-                  } catch (error) {
-                    console.error('Failed to create default list for user:', error);
-                    // Don't throw - user creation should still succeed
-                  }
-                },
-              },
-            },
-          },
+        // Type inference for client
+        $Infer: {
+            // Types will be automatically inferred by Better-Auth
         },
-      };
-    },
 
-    // Register all endpoints
-    endpoints: (sharingEndpoints
-      ? {
-          ...listEndpoints,
-          ...itemEndpoints,
-          ...bulkEndpoints,
-          ...sharingEndpoints,
-        }
-      : {
-          ...listEndpoints,
-          ...itemEndpoints,
-          ...bulkEndpoints,
-        }) as any,
-  };
+        // Lifecycle hooks
+        init(ctx) {
+            return {
+                options: {
+                    databaseHooks: {
+                        user: {
+                            create: {
+                                // Create default favorites list when user signs up (if enabled)
+                                after: async (user) => {
+                                    if (!config.createDefaultList) {
+                                        return;
+                                    }
+
+                                    try {
+                                        await ctx.adapter.create({
+                                            model: 'lists',
+                                            data: {
+                                                userId: user.id,
+                                                name: config.defaultListName || 'Favorites',
+                                                description:
+                                                    config.defaultListDescription ||
+                                                    'Your favorite items',
+                                                type: 'default',
+                                                isPublic: false,
+                                                maxItems: config.maxItemsPerList || 100,
+                                                createdAt: new Date(),
+                                                updatedAt: new Date(),
+                                            },
+                                        });
+                                    } catch (error) {
+                                        console.error(
+                                            'Failed to create default list for user:',
+                                            error
+                                        );
+                                        // Don't throw - user creation should still succeed
+                                    }
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        },
+
+        // Register all endpoints
+        endpoints: (sharingEndpoints
+            ? {
+                  ...listEndpoints,
+                  ...itemEndpoints,
+                  ...bulkEndpoints,
+                  ...sharingEndpoints,
+              }
+            : {
+                  ...listEndpoints,
+                  ...itemEndpoints,
+                  ...bulkEndpoints,
+              }) as any,
+    };
 }
 
 // Export all types for consumer use

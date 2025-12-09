@@ -22,9 +22,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap && bun build src/client.ts --outdir dist --target browser --format esm --sourcemap && tsc --emitDeclarationOnly",
+    "build": "bun run format && bun build src/index.ts --outdir dist --target node --format esm --sourcemap && bun build src/client.ts --outdir dist --target browser --format esm --sourcemap && tsc --emitDeclarationOnly",
     "dev": "bun build src/index.ts --outdir dist --target node --format esm --sourcemap --watch",
     "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
     "prepublishOnly": "bun run build"
   },
   "keywords": [
@@ -50,6 +52,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^22.0.0",
+    "prettier": "^3.7.4",
     "typescript": "^5.7.2"
   }
 }

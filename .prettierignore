@@ -1,0 +1,33 @@
+# Ignore artifacts:
+dist
+build
+coverage
+.next
+.nuxt
+.cache
+
+# Ignore dependencies
+node_modules
+.pnpm-store
+
+# Ignore all dotfiles except .prettierrc and .prettierignore
+.*
+!.prettierrc
+!.prettierignore
+
+# Ignore lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Ignore generated files
+*.min.js
+*.min.css
+*.map
+
+# Ignore markdown files in root (they often have specific formatting)
+/*.md
+
+# Ignore CHANGELOG
+CHANGELOG.md
