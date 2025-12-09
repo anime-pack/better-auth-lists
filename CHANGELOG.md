@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2025-12-09
+
+### Added
+- **Server-Side Toggle Endpoint:** Added atomic `POST /api/auth/lists/:id/items/toggle` endpoint
+  - Eliminates race conditions from client-side toggle implementation
+  - Single atomic database operation (check + add/remove)
+  - Returns `{ added: boolean, item?: ListItem }` for deterministic results
+  - Handles concurrent requests gracefully with database locking
+  - Fixes `ItemAlreadyExistsError` that occurred with client-side toggle logic
+
+### Fixed
+- **Toggle Race Condition:** Resolved critical bug where concurrent toggle operations caused `ItemAlreadyExistsError`
+  - Previous implementation: Client checked existence, then sent add/remove request (race condition window)
+  - New implementation: Server handles entire toggle operation atomically
+  - Works perfectly with multiple tabs, users, or concurrent requests
+
+### Changed
+- Simplified `items.toggle()` client method to call new server endpoint
+  - Reduced from 50+ lines of error handling to 5 lines
+  - Single request instead of 2-3 requests
+  - Cleaner, more maintainable code
+
 ## [0.2.1] - 2025-12-08
 
 ### Added

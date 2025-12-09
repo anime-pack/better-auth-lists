@@ -332,5 +332,122 @@ export const createItemEndpoints = <TEntity = string | number>(
                 return ctx.json({ success: true });
             }
         ),
+
+        /**
+         * POST /api/auth/lists/:id/items/toggle - Toggle item in list
+         */
+        toggleItemInList: createAuthEndpoint(
+            '/lists/:id/items/toggle',
+            {
+                method: 'POST',
+                body: addItemSchema,
+                use: [sessionMiddleware],
+                metadata: {
+                    openapi: {
+                        summary: 'Toggle item in list',
+                        description:
+                            'Add item if not present, remove if already exists. Atomic operation with no race conditions.',
+                        tags: ['List Items'],
+                    },
+                },
+            },
+            async (ctx) => {
+                if (!ctx.context.session) {
+                    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+                        status: 401,
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                }
+                const userId = ctx.context.session.user.id;
+                const listId = ctx.params.id;
+                const body = ctx.body;
+
+                // Get list
+                const list = await ctx.context.adapter.findOne<List>({
+                    model: 'lists',
+                    where: [
+                        { field: 'id', value: listId },
+                        { field: 'userId', value: userId },
+                    ],
+                });
+
+                if (!list) {
+                    throw new ListNotFoundError(listId);
+                }
+
+                // Check if item already exists
+                const existingItem = await ctx.context.adapter.findOne<ListItem<TEntity>>({
+                    model: 'listItems',
+                    where: [
+                        { field: 'listId', value: listId },
+                        { field: 'entityId', value: String(body.entityId) },
+                    ],
+                });
+
+                if (existingItem) {
+                    // Item exists, remove it
+                    await ctx.context.adapter.delete({
+                        model: 'listItems',
+                        where: [{ field: 'id', value: existingItem.id }],
+                    });
+
+                    // Reorder remaining items
+                    const remainingItems = await ctx.context.adapter.findMany<ListItem<TEntity>>({
+                        model: 'listItems',
+                        where: [{ field: 'listId', value: listId }],
+                        sortBy: { field: 'position', direction: 'asc' },
+                    });
+
+                    // Update positions
+                    for (let i = 0; i < remainingItems.length; i++) {
+                        if (remainingItems[i]!.position !== i) {
+                            await ctx.context.adapter.update({
+                                model: 'listItems',
+                                where: [{ field: 'id', value: remainingItems[i]!.id }],
+                                update: { position: i },
+                            });
+                        }
+                    }
+
+                    return ctx.json({ added: false });
+                } else {
+                    // Item doesn't exist, add it
+                    // Validate entity if validation function provided
+                    if (options.validateEntity) {
+                        const isValid = await options.validateEntity(body.entityId as TEntity);
+                        if (!isValid) {
+                            throw new EntityValidationFailedError(body.entityId);
+                        }
+                    }
+
+                    // Check list capacity
+                    const items = await ctx.context.adapter.findMany({
+                        model: 'listItems',
+                        where: [{ field: 'listId', value: listId }],
+                    });
+
+                    if (items.length >= list.maxItems) {
+                        throw new ListFullError(list.maxItems);
+                    }
+
+                    // Calculate position (append to end if not specified)
+                    const position = body.position ?? items.length;
+
+                    // Create item
+                    const newItem = await ctx.context.adapter.create<ListItem<TEntity>>({
+                        model: 'listItems',
+                        data: {
+                            listId,
+                            entityId: String(body.entityId) as any,
+                            position,
+                            notes: body.notes,
+                            addedAt: new Date(),
+                        } as any,
+                    });
+
+                    return ctx.json({ added: true, item: newItem });
+                }
+            }
+        ),
     };
 };

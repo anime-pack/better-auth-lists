@@ -68,6 +68,7 @@ export function listsClient<TEntity = string | number>() {
             '/lists/check-entity': 'POST',
             '/lists/:id/items': 'GET',
             '/lists/:id/items/batch': 'POST',
+            '/lists/:id/items/toggle': 'POST',
             '/lists/:id/duplicate': 'POST',
             '/lists/import': 'POST',
             '/lists/:id/export': 'GET',
@@ -282,44 +283,17 @@ export function listsClient<TEntity = string | number>() {
                         entityId: TEntity,
                         notes?: string
                     ): Promise<{ added: boolean; item?: ListItem<TEntity> }> {
-                        // Get list to check if item exists
-                        const listResponse = await $fetch<{ data: ListWithItems<TEntity> }>(
-                            `/lists/${listId}`
-                        );
-                        if (listResponse.error) {
-                            throw listResponse.error;
+                        const response = await $fetch<{
+                            added: boolean;
+                            item?: ListItem<TEntity>;
+                        }>(`/lists/${listId}/items/toggle`, {
+                            method: 'POST',
+                            body: { entityId, notes },
+                        });
+                        if (response.error) {
+                            throw response.error;
                         }
-                        const list = listResponse.data!.data;
-                        const existingItem = list.items.find(
-                            (item: ListItem<TEntity>) => item.entityId === entityId
-                        );
-
-                        if (existingItem) {
-                            // Remove item
-                            const removeResponse = await $fetch<{ success: boolean }>(
-                                `/lists/${listId}/items/${existingItem.id}`,
-                                {
-                                    method: 'DELETE',
-                                }
-                            );
-                            if (removeResponse.error) {
-                                throw removeResponse.error;
-                            }
-                            return { added: false };
-                        } else {
-                            // Add item
-                            const response = await $fetch<{ data: ListItem<TEntity> }>(
-                                `/lists/${listId}/items`,
-                                {
-                                    method: 'POST',
-                                    body: { entityId, notes },
-                                }
-                            );
-                            if (response.error) {
-                                throw response.error;
-                            }
-                            return { added: true, item: response.data!.data };
-                        }
+                        return response.data!;
                     },
                 },
 

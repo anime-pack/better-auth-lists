@@ -142,7 +142,13 @@ await authClient.items.update(listId, itemId, {
 });
 
 // Toggle item (add if not present, remove if present)
+// Race-condition free with atomic server-side operation
 const { added, item } = await authClient.items.toggle(listId, animeId);
+if (added) {
+  console.log('Item added:', item);
+} else {
+  console.log('Item removed');
+}
 ```
 
 ### Checking Items Across Lists
