@@ -370,12 +370,14 @@ export const createListEndpoints = <TEntity = string | number>(
         ),
 
         /**
-         * DELETE /api/auth/lists/:id - Delete list
+         * POST /api/auth/lists/:id/remove - Delete list
+         * Note: Using POST instead of DELETE due to Better-Auth's better-fetch Content-Type limitation
+         * See: https://github.com/better-auth/better-auth/issues/XXX
          */
         deleteList: createAuthEndpoint(
-            '/lists/:id',
+            '/lists/:id/remove',
             {
-                method: 'DELETE',
+                method: 'POST',
                 use: [sessionMiddleware],
                 metadata: {
                     openapi: {

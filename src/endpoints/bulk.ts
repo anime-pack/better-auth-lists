@@ -156,12 +156,14 @@ export const createBulkEndpoints = <TEntity = string | number>(
         ),
 
         /**
-         * DELETE /api/auth/lists/:id/items/batch - Batch remove items from list
+         * POST /api/auth/lists/:id/items/batch/remove - Batch remove items from list
+         * Note: Using POST instead of DELETE due to Better-Auth's better-fetch Content-Type limitation
+         * See: https://github.com/better-auth/better-auth/issues/XXX
          */
         batchRemoveItems: createAuthEndpoint(
-            '/lists/:id/items/batch',
+            '/lists/:id/items/batch/remove',
             {
-                method: 'DELETE',
+                method: 'POST',
                 body: batchRemoveItemsSchema,
                 use: [sessionMiddleware],
                 metadata: {

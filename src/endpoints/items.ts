@@ -1,4 +1,5 @@
 import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
+import { z } from 'zod';
 import type { ListsPluginOptions, List, ListItem } from '../types';
 import {
     ListNotFoundError,
@@ -253,12 +254,15 @@ export const createItemEndpoints = <TEntity = string | number>(
         ),
 
         /**
-         * DELETE /api/auth/lists/:listId/items/:itemId - Remove item from list
+         * POST /api/auth/lists/:listId/items/remove - Remove item from list
+         * Note: Using POST instead of DELETE due to Better-Auth's better-fetch Content-Type limitation
+         * See: https://github.com/better-auth/better-auth/issues/XXX
          */
         removeItemFromList: createAuthEndpoint(
-            '/lists/:listId/items/:itemId',
+            '/lists/:listId/items/remove',
             {
-                method: 'DELETE',
+                method: 'POST',
+                body: z.object({ itemId: z.string() }),
                 use: [sessionMiddleware],
                 metadata: {
                     openapi: {
@@ -277,7 +281,7 @@ export const createItemEndpoints = <TEntity = string | number>(
                 }
                 const userId = ctx.context.session.user.id;
                 const listId = ctx.params.listId;
-                const itemId = ctx.params.itemId;
+                const { itemId } = ctx.body;
 
                 // Verify list access
                 const list = await ctx.context.adapter.findOne<List>({

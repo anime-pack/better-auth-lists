@@ -1,4 +1,5 @@
 import { createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
+import { z } from 'zod';
 import type { ListsPluginOptions, List, ListShare, ListInvite, SharePermission } from '../types';
 import {
     ListNotFoundError,
@@ -8,7 +9,6 @@ import {
     ShareLimitReachedError,
 } from '../errors';
 import { shareListSchema, updateMemberPermissionSchema, inviteActionSchema } from '../validation';
-import { z } from 'zod';
 
 /**
  * Create sharing and collaboration endpoints (conditional on feature flag)
@@ -507,12 +507,15 @@ export const createSharingEndpoints = <TEntity = string | number>(
         ),
 
         /**
-         * DELETE /api/auth/lists/:id/members/:userId - Revoke access
+         * POST /api/auth/lists/:id/members/revoke - Revoke access
+         * Note: Using POST instead of DELETE due to Better-Auth's better-fetch Content-Type limitation
+         * See: https://github.com/better-auth/better-auth/issues/XXX
          */
         revokeAccess: createAuthEndpoint(
-            '/lists/:id/members/:userId',
+            '/lists/:id/members/revoke',
             {
-                method: 'DELETE',
+                method: 'POST',
+                body: z.object({ userId: z.string() }),
                 use: [sessionMiddleware],
                 metadata: {
                     openapi: {
@@ -531,7 +534,7 @@ export const createSharingEndpoints = <TEntity = string | number>(
                 }
                 const ownerId = ctx.context.session.user.id;
                 const listId = ctx.params.id;
-                const memberId = ctx.params.userId;
+                const { userId: memberId } = ctx.body;
 
                 // Verify list ownership
                 const list = await ctx.context.adapter.findOne<List>({

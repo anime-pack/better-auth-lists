@@ -545,6 +545,54 @@ try {
 - [ ] Soft delete feature
 - [ ] OpenAPI spec generation
 
+## Known Issues & Limitations
+
+### Better-Auth HTTP Method Limitations
+
+Better-Auth has two key limitations that affect REST endpoint design:
+
+#### 1. DELETE Method with Body Parameters
+
+Due to a limitation in Better-Auth's underlying `better-fetch` library, DELETE requests with body parameters are not properly supported (the `Content-Type` header requirement conflicts with the HTTP spec for DELETE methods without bodies).
+
+**Our Solution:** All deletion endpoints use `POST` method with URL paths ending in `/remove` or `/revoke`:
+
+#### 2. PATCH Method in pathMethods
+
+Better-Auth's `pathMethods` configuration only supports `GET` and `POST` methods. PATCH (and DELETE) methods cannot be registered in `pathMethods` and must be called directly through `getActions` with explicit method specification.
+
+**Impact:** Update operations (PATCH) work perfectly but cannot use the simplified `pathMethods` registration. All PATCH endpoints are defined in `getActions` with explicit `method: 'PATCH'`.
+
+**Affected Operations:**
+
+| Operation | Method | Endpoint | Limitation |
+|-----------|--------|----------|------------|
+| Update list | `PATCH` | `/lists/:id` | Cannot use pathMethods |
+| Update list item | `PATCH` | `/lists/:id/items/:itemId` | Cannot use pathMethods |
+| Update member permission | `PATCH` | `/lists/:id/members/:userId` | Cannot use pathMethods |
+| Remove item from list | `POST` | `/lists/:listId/items/remove` | DELETE not supported with body |
+| Delete list | `POST` | `/lists/:id/remove` | DELETE not supported with body |
+| Batch remove items | `POST` | `/lists/:id/items/batch/remove` | DELETE not supported with body |
+| Revoke member access | `POST` | `/lists/:id/members/revoke` | DELETE not supported with body |
+
+**Example:**
+```typescript
+// ❌ Would fail with Better-Auth (DELETE with body)
+await fetch('/lists/:listId/items/:itemId', { method: 'DELETE' })
+
+// ✅ Works perfectly (POST with body)
+await authClient.items.remove(listId, itemId)
+// Calls: POST /lists/:listId/items/remove { itemId }
+
+// ✅ PATCH works but requires explicit method in getActions
+await authClient.lists.update(listId, { name: 'New Name' })
+// Calls: PATCH /lists/:id { name: 'New Name' }
+```
+
+This is transparent when using the provided client methods - they handle the correct endpoints and methods automatically.
+
+**Related Issue:** These are known Better-Auth limitations that affect any plugin using DELETE or PATCH methods in `pathMethods`. We've implemented workarounds to ensure full compatibility.
+
 ## Contributing
 
 Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md) first.

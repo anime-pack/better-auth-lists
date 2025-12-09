@@ -62,6 +62,8 @@ export function listsClient<TEntity = string | number>() {
         $InferServerPlugin: {} as ReturnType<typeof listsPlugin<TEntity>>,
 
         // Define path methods for REST endpoints
+        // Note: Better-Auth's pathMethods only supports GET/POST methods
+        // PATCH and DELETE methods must be called via getActions with explicit method specification
         pathMethods: {
             '/lists': 'GET',
             '/lists/:id': 'GET',
@@ -101,7 +103,7 @@ export function listsClient<TEntity = string | number>() {
                         }
 
                         const response = await $fetch<PaginatedListsResponse<TEntity>>(
-                            '/lists' + (params.toString() ? `?${params}` : '')
+                            '/lists' + (params.toString() ? `?${params.toString()}` : '')
                         );
                         if (response.error) {
                             throw response.error;
@@ -152,11 +154,15 @@ export function listsClient<TEntity = string | number>() {
 
                     /**
                      * Delete a list
+                     * Note: Uses POST instead of DELETE due to Better-Auth limitation
                      */
                     async delete(listId: string): Promise<boolean> {
-                        const response = await $fetch<{ success: boolean }>(`/lists/${listId}`, {
-                            method: 'DELETE',
-                        });
+                        const response = await $fetch<{ success: boolean }>(
+                            `/lists/${listId}/remove`,
+                            {
+                                method: 'POST',
+                            }
+                        );
                         if (response.error) {
                             throw response.error;
                         }
@@ -261,12 +267,14 @@ export function listsClient<TEntity = string | number>() {
 
                     /**
                      * Remove an item from a list
+                     * Note: Uses POST instead of DELETE due to Better-Auth limitation
                      */
                     async remove(listId: string, itemId: string): Promise<boolean> {
                         const response = await $fetch<{ success: boolean }>(
-                            `/lists/${listId}/items/${itemId}`,
+                            `/lists/${listId}/items/remove`,
                             {
-                                method: 'DELETE',
+                                method: 'POST',
+                                body: { itemId },
                             }
                         );
                         if (response.error) {
@@ -319,15 +327,16 @@ export function listsClient<TEntity = string | number>() {
 
                     /**
                      * Remove multiple items from a list at once
+                     * Note: Uses POST instead of DELETE due to Better-Auth limitation
                      */
                     async removeItems(
                         listId: string,
                         input: BatchRemoveItemsInput<TEntity>
                     ): Promise<BatchOperationResult<string>> {
                         const response = await $fetch<{ data: BatchOperationResult<string> }>(
-                            `/lists/${listId}/items/batch`,
+                            `/lists/${listId}/items/batch/remove`,
                             {
-                                method: 'DELETE',
+                                method: 'POST',
                                 body: input,
                             }
                         );
@@ -517,12 +526,14 @@ export function listsClient<TEntity = string | number>() {
 
                     /**
                      * Revoke a user's access to a list
+                     * Note: Uses POST instead of DELETE due to Better-Auth limitation
                      */
                     async revoke(listId: string, userId: string) {
                         const response = await $fetch<{ success: boolean }>(
-                            `/lists/${listId}/members/${userId}`,
+                            `/lists/${listId}/members/revoke`,
                             {
-                                method: 'DELETE',
+                                method: 'POST',
+                                body: { userId },
                             }
                         );
                         if (response.error) {

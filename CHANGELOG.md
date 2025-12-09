@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-12-09
+
+### Changed
+- **BREAKING: DELETE Endpoints Refactored to POST** - Migrated all deletion endpoints to use POST method with body parameters
+  - **Reason:** Better-Auth's `better-fetch` library has a limitation where DELETE requests with body parameters fail due to Content-Type header requirements
+  - **Solution:** All deletion operations now use POST with `/remove` or `/revoke` suffix in the URL path
+  
+  | Old Endpoint | New Endpoint |
+  |-------------|--------------|
+  | `DELETE /lists/:listId/items/:itemId` | `POST /lists/:listId/items/remove` |
+  | `DELETE /lists/:id` | `POST /lists/:id/remove` |
+  | `DELETE /lists/:id/items/batch` | `POST /lists/:id/items/batch/remove` |
+  | `DELETE /lists/:id/members/:userId` | `POST /lists/:id/members/revoke` |
+
+### Fixed
+- **DELETE Content-Type Issue:** Resolved Better-Auth limitation preventing DELETE requests with body parameters
+  - All client methods now use POST with proper body serialization
+  - No breaking changes for client code - methods work transparently with new endpoints
+  - Documented Better-Auth limitation in README under "Known Issues & Limitations"
+
+### Added
+- Documentation section explaining Better-Auth DELETE method limitation and our workaround
+
+### Migration Guide
+If you're upgrading from v0.2.2 or earlier:
+- **Client code:** No changes needed! All client methods (`remove()`, `delete()`, `removeItems()`, `revoke()`) work transparently
+- **Direct API calls:** If calling endpoints directly, update to use new POST `/remove` or `/revoke` paths with body parameters instead of URL params
+- **Server code:** If you've extended or customized endpoints, update DELETE handlers to POST with new paths
+
 ## [0.2.2] - 2025-12-09
 
 ### Added

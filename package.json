@@ -1,6 +1,6 @@
 {
   "name": "@anime-pack/better-auth-lists",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Generic, type-safe lists plugin for Better-Auth supporting any entity type",
   "type": "module",
   "main": "./dist/index.js",
