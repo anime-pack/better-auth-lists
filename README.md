@@ -9,7 +9,7 @@
 > 
 > ⚠️ **Minimum Version:** Requires Better-Auth v1.4.5 or higher due to breaking API changes in the adapter interface.
 > 
-> **Latest Update (Dec 8, 2025):** Fixed authentication by adding `sessionMiddleware` to all endpoints. The `createAuthEndpoint` function requires explicit middleware to populate session context.
+> **Latest Update (Dec 9, 2025):** Fixed authentication by adding `sessionMiddleware` to all endpoints. The `createAuthEndpoint` function requires explicit middleware to populate session context.
 
 A fully generic, type-safe lists/collections plugin for [Better-Auth](https://better-auth.com) that works with any entity type (anime, movies, books, products, etc.).
 
@@ -23,7 +23,8 @@ A fully generic, type-safe lists/collections plugin for [Better-Auth](https://be
 ✅ **Import/Export** - JSON-based list portability  
 ✅ **Entity Validation** - Optional validation hooks for external APIs  
 ✅ **Advanced Querying** - Filter, sort, search, and paginate  
-✅ **Client Helpers** - Framework-agnostic client plugin
+✅ **Client Helpers** - Framework-agnostic client plugin  
+✅ **Well Tested** - Comprehensive unit test suite with Vitest
 
 ## Installation
 
@@ -592,6 +593,35 @@ await authClient.lists.update(listId, { name: 'New Name' })
 This is transparent when using the provided client methods - they handle the correct endpoints and methods automatically.
 
 **Related Issue:** These are known Better-Auth limitations that affect any plugin using DELETE or PATCH methods in `pathMethods`. We've implemented workarounds to ensure full compatibility.
+
+## Testing
+
+This plugin includes a comprehensive test suite using Vitest:
+
+```bash
+# Run tests
+bun test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage
+bun run test:coverage
+
+# Run tests with UI
+bun run test:ui
+```
+
+### Test Coverage
+
+- ✅ Plugin configuration and options
+- ✅ Schema definitions
+- ✅ All endpoint registrations
+- ✅ Client actions (lists, items, bulk, sharing)
+- ✅ Error classes and codes
+- ✅ Type safety for generic entity types
+
+See [tests/README.md](./tests/README.md) for detailed testing documentation.
 
 ## Contributing
 
