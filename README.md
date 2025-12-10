@@ -28,6 +28,23 @@ A fully generic, type-safe lists/collections plugin for [Better-Auth](https://be
 
 ## Installation
 
+### From GitHub Packages
+
+This package is currently published to GitHub Packages. To install it, you need to configure npm/bun to use GitHub Packages for the `@anime-pack` scope.
+
+#### One-time setup
+
+Create or update your `.npmrc` file in your project root:
+
+```bash
+@anime-pack:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+Replace `YOUR_GITHUB_TOKEN` with a GitHub Personal Access Token that has `read:packages` permission. [Create one here](https://github.com/settings/tokens/new?scopes=read:packages).
+
+#### Install the package
+
 ```bash
 npm install @anime-pack/better-auth-lists
 # or
@@ -35,6 +52,8 @@ pnpm add @anime-pack/better-auth-lists
 # or
 bun add @anime-pack/better-auth-lists
 ```
+
+> **Note:** This package will be published to npm registry in the future for easier installation without authentication.
 
 **Peer Dependencies:**
 - `better-auth >= 1.4.5` (requires v1.4.5+ for adapter API compatibility)
