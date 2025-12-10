@@ -372,6 +372,7 @@ export const createListEndpoints = <TEntity = string | number>(
         /**
          * POST /api/auth/lists/:id/remove - Delete list
          * Note: Using POST instead of DELETE due to Better-Auth's better-fetch Content-Type limitation
+         * Note: No body schema defined - client sends empty {} to satisfy better-fetch POST requirement
          * See: https://github.com/better-auth/better-auth/issues/XXX
          */
         deleteList: createAuthEndpoint(

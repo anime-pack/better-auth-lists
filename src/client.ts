@@ -155,12 +155,14 @@ export function listsClient<TEntity = string | number>() {
                     /**
                      * Delete a list
                      * Note: Uses POST instead of DELETE due to Better-Auth limitation
+                     * Empty body required - Better-Auth's better-fetch expects POST to have a body
                      */
                     async delete(listId: string): Promise<boolean> {
                         const response = await $fetch<{ success: boolean }>(
                             `/lists/${listId}/remove`,
                             {
                                 method: 'POST',
+                                body: {}, // Empty body required for POST requests in better-fetch
                             }
                         );
                         if (response.error) {
@@ -372,7 +374,7 @@ export function listsClient<TEntity = string | number>() {
                             `/lists/${listId}/duplicate`,
                             {
                                 method: 'POST',
-                                body: input || {},
+                                body: input || {}, // Empty body if no input provided
                             }
                         );
                         if (response.error) {
