@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- GitHub Actions workflows for CI/CD
+  - PR workflow: Build and test on pull requests
+  - Publish workflow: Automatic publishing to GitHub Packages on push to main
+- Installation instructions for GitHub Packages in README
+- CI/CD documentation in `.github/CICD.md`
+- Comprehensive unit test suite with Vitest (56 tests)
+  - Plugin configuration tests
+  - Client actions tests
+  - Error handling tests
+  - Coverage reporting
+
+### Changed
+- Updated `package.json` with GitHub Packages configuration
+- Added repository metadata and publishConfig for GitHub integration
+
 ## [0.2.3] - 2025-12-09
 
 ### Changed

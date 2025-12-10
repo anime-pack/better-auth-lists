@@ -45,7 +45,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/anime-pack/better-auth-lists.git"
+    "url": "git+https://github.com/anime-pack/better-auth-lists.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anime-pack/better-auth-lists/issues"
+  },
+  "homepage": "https://github.com/anime-pack/better-auth-lists#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "@anime-pack:registry": "https://npm.pkg.github.com"
   },
   "license": "MIT",
   "peerDependencies": {
